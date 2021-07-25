@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>image grid tool</title>
+        <style>
+            body {
+                margin: 0;
+            }
+            #canvas {
+                display: none;
+            }
+            #control {
+                position: fixed;
+                top: 0;
+                background-color: #dcdcdc;
+                width: 100%;
+                padding: 20px 10px;
+            }
+            #control > dl {
+                display: flex;
+                margin: 0;
+                flex-wrap: wrap;
+            }
+
+            #control > dl > div {
+                margin: 0 2px 4px;
+            }
+
+            #control > dl > div > dt {
+                font-size: 10px;
+                background-color: #4d4dd0;
+                padding: 1px 5px;
+                color: #fff;
+                font-weight: bold;
+            }
+
+            #control >dl > div > dd {
+                margin-left: 0;
+            }
+
+            input[type="number"] {
+                width: 4em;
+            }
+
+            #output {
+                margin: 5px;
+                overflow: auto;
+            }
+
+            #output img {
+                max-width: 100%;
+                height: auto;
+            }
+            #clipBorardImage > img {
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="canvas"></canvas>
+        <div id="control">
+            <dl>
+                <div>
+                    <dt>始点Y縦</dt>
+                    <dd>
+                        <input type="range" id="startY" min="0" max="0" value="0">
+                        <input type="number" data-range-step="startY" value="0" min="0">
+                        <input type="button" data-range-down="startY" value="↑">
+                        <input type="button" data-range-up="startY" value="↓">
+                    </dd>
+                </div>
+                <div>
+                    <dt>始点X横</dt>
+                    <dd>
+                        <input type="range" id="startX" min="0" max="0" value="0">
+                        <input type="number" data-range-step="startX" value="0" min="0">
+                        <input type="button" data-range-down="startX" value="←">
+                        <input type="button" data-range-up="startX" value="→">
+                    </dd>
+                </div>
+                <div>
+                    <dt>横幅</dt>
+                    <dd>
+                        <input type="range" id="width" min="0" max="0" value="0">
+                        <input type="number" data-range-step="width" value="0" min="0">
+                        <input type="button" data-range-down="width" value="←">
+                        <input type="button" data-range-up="width" value="→">
+                    </dd>
+                </div>
+                <div>
+                    <dt>縦幅</dt>
+                    <dd>
+                        <input type="range" id="height" min="0" max="0" value="0">
+                        <input type="number" data-range-step="height" value="0" min="0">
+                        <input type="button" data-range-down="height" value="↑">
+                        <input type="button" data-range-up="height" value="↓">
+                    </dd>
+                </div>
+                <div>
+                    <dt>主線</dt>
+                    <dd>
+                        <input type="color" id="mainColor" value="#0000ff">
+                        <input type="number" id="mainBorder" value="2" min="1">
+                    </dd>
+                </div>
+                <div>
+                    <dt>準線</dt>
+                    <dd>
+                        <input type="color" id="subColor" value="#8585ff">
+                        <input type="number" id="subBorder" value="2" min="1">
+                    </dd>
+                </div>
+                <div>
+                    <dt>分割数</dt>
+                    <dd>
+                        <input type="number" id="splidNumber" value="2" min="1">
+                    </dd>
+                </div>
+                <div>
+                    <dt>画像表示</dt>
+                    <dd>
+                        <input type="checkbox" id="noneImage" value="true" checked="true">画像表示
+                    
+                    </dd>
+                </div>
+                <div>
+                    <dt>画像ファイル</dt>
+                    <dd>
+                        <input type="file" id="file" accept='image/*'>
+                        <span id="clipBorardImage" contenteditable="true">
+                            ペースト
+                        </span>
+                    </dd>
+                </div>
+            </dl>
+        </div>
+        <div id="output"></div>
+
+        <!-- 出力機能 -->
+        <script>
+            var canvas = document.getElementById("canvas");
+            var context = canvas.getContext('2d');
+            var outputElement = document.getElementById('output');
+
+            // サイズ
+            var width = 0;
+            var height = 0;
+            var startY = 0;
+            var startX = 0;
+            var gridWidth = 0;
+            var gridHeight = 0;
+            var gridWidthSplit = 0;
+            var gridHeightSplit = 0;
+            var splidNumber = 2;
+
+            //他描画情報
+            var mainColor = "";
+            var subColor = "";
+            var mainBorder = 2;
+            var subBorder = 2;
+            var noneImage = true;
+
+            // 画像情報
+            var uploadImgSrc;
+            var fileLoadFlag = false;
+
+            const rangeInputElements = {
+                height: document.getElementById("height"),
+                width: document.getElementById("width"),
+                startY: document.getElementById("startY"),
+                startX: document.getElementById("startX"),
+            }
+            const optionInputElements = {
+                mainColor: document.getElementById("mainColor"),
+                subColor: document.getElementById("subColor"),
+                mainBorder: document.getElementById("mainBorder"),
+                subBorder: document.getElementById("subBorder"),
+                splidNumber: document.getElementById("splidNumber"),
+                noneImage: document.getElementById("noneImage"),
+            }
+            const noneImageInputElement = document.getElementById("noneImage")
+
+            function init() {}
+
+            function loadLocalImage(e) {
+                // ファイル情報を取得
+                var fileData = e.target.files[0];
+                fileLoadFlag = true;
+                // 画像ファイル以外は処理を止める
+                if (fileData.type && !fileData.type.match('image.*')) {
+                    alert('画像を選択してください');
+                    return;
+                }
+
+                // FileReaderオブジェクトを使ってファイル読み込み
+                var reader = new FileReader();
+                // ファイル読み込みに成功したときの処理
+                reader.onload = function() {
+                    // Canvas上に表示する
+                    uploadImgSrc = reader.result;
+                    ImageDraw();
+                }
+                // ファイル読み込みを実行
+                reader.readAsDataURL(fileData);
+            }
+            // クリップボードから読み込み
+            function imagePaste(event) {
+                var blobimg = null;
+                fileLoadFlag = true;
+                var items = (event.clipboardData || event.originalEvent.clipboardData).items;
+                for (var i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf("image") == 0) {
+                        blobimg = items[i].getAsFile();
+                    }
+                }
+
+                if (blobimg != null) {
+                    uploadImgSrc = URL.createObjectURL(blobimg);
+                    ImageDraw();
+
+                }
+            }
+            // フォームに初期値を設定
+            function InitInputsSize() {
+                rangeInputElements.width.max = width
+                rangeInputElements.width.value = width
+                document.querySelector('[data-range-step="width"]').value = width
+                rangeInputElements.height.max = height
+                rangeInputElements.height.value = height
+                document.querySelector('[data-range-step="height"]').value = height
+                rangeInputElements.startY.max = height
+                rangeInputElements.startX.max = width
+            }
+
+            // グリットフォーム情報の取得
+            function getGridInputsSize() {
+                startY = Number(rangeInputElements.startY.value);
+                startX = Number(rangeInputElements.startX.value);
+                gridWidth = Number(rangeInputElements.width.value);
+                gridHeight = Number(rangeInputElements.height.value);
+                splidNumber = Number(optionInputElements.splidNumber.value) * 2;
+                gridWidthSplit = gridWidth / splidNumber;
+                gridHeightSplit = gridHeight / splidNumber;
+                mainColor = optionInputElements.mainColor.value;
+                subColor = optionInputElements.subColor.value;
+                mainBorder = optionInputElements.mainBorder.value;
+                subBorder = optionInputElements.subBorder.value;
+            }
+
+            // グリッドの描画
+            function gridDraw() {
+                getGridInputsSize()
+                //枠線
+                context.lineWidth = mainBorder;
+                context.strokeStyle = mainColor;
+                context.strokeRect(startX, startY, gridWidth, gridHeight);
+
+                // 横分割 |
+                for (var i = 1; i < splidNumber; i++) {
+                    if ((i % 2) == 0) {
+                        context.lineWidth = mainBorder;
+                        context.strokeStyle = mainColor;
+                        context.setLineDash([]);
+                    } else {
+                        context.lineWidth = subBorder;
+                        context.strokeStyle = subColor;
+                        context.setLineDash([2, 2]);
+                    }
+                    gridDrawHeightLine(i);
+                }
+                // 縦分割　ー
+                for (var i = 1; i < splidNumber; i++) {
+                    if ((i % 2) == 0) {
+                        context.lineWidth = mainBorder;
+                        context.strokeStyle = mainColor;
+                        context.setLineDash([]);
+                    } else {
+                        context.lineWidth = subBorder;
+                        context.strokeStyle = subColor;
+                        context.setLineDash([2, 2]);
+                    }
+                    gridDrawWidthLine(i);
+                }
+            }
+            // グリッドの描画補助
+            function gridDrawWidthLine(split) {
+                context.beginPath();
+                context.moveTo(startX, (gridHeightSplit * split) + startY);
+                context.lineTo(gridWidth + startX, (gridHeightSplit * split) + startY);
+                context.stroke();
+            }
+            // グリッドの描画補助
+            function gridDrawHeightLine(split) {
+                context.beginPath();
+                context.moveTo((gridWidthSplit * split) + startX, startY);
+                context.lineTo((gridWidthSplit * split) + startX, gridHeight + startY);
+                context.stroke();
+            }
+
+            // Canvas上に画像を表示する
+            function ImageDraw() {
+                if (!uploadImgSrc) {
+                    return false
+                }
+                // Canvas上に画像を表示
+                var img = new Image();
+                img.src = uploadImgSrc;
+                img.onload = function() {
+                    // サイズ取得
+                    width = img.width;
+                    height = img.height;
+                    canvas.width = width;
+                    canvas.height = height;
+                    // フォームに初期値を設定
+                    if (fileLoadFlag) {
+                        InitInputsSize()
+                        fileLoadFlag = false
+                    }
+                    // キャンバスに画像を表示
+                    if (noneImage) {
+                        context.drawImage(img, 0, 0);
+                    }
+                    // グリッドの描画
+                    gridDraw()
+                    //画像タグに代入して表示
+                    var dataurl = canvas.toDataURL();
+                    outputElement.innerHTML = "<img src='" + dataurl + "'>";
+                }
+            }
+
+            // ファイル読み込みイベント
+            var file = document.getElementById('file');
+            file.addEventListener('change', loadLocalImage, false);
+
+            var clipBorardImageElement = document.getElementById('clipBorardImage');
+            clipBorardImageElement.addEventListener("paste", imagePaste);
+
+
+            // その他オプションイベント
+            function optionChangeEvent() {
+                // 再描画
+                ImageDraw()
+            }
+            // イベントセット
+            Object.keys(optionInputElements).forEach(optionInputElementKey=>optionInputElements[optionInputElementKey].addEventListener("change", optionChangeEvent, false));
+
+            // 画像の表示非表示イベント
+            function noneImageInputChangeEvent(e) {
+                var chenge = noneImage ? false : true;
+                e.target.value = chenge;
+                noneImage = chenge;
+                // 再描画
+                ImageDraw()
+            }
+            // イベントセット
+            noneImageInputElement.addEventListener("change", noneImageInputChangeEvent, false);
+
+            // レンジで調整したらstepに反映
+            function rangeChangeEvent(e) {
+                var targetId = e.target.getAttribute('id');
+
+                // 反映
+                document.querySelector('[data-range-step="' + targetId + '"]').value = rangeInputElements[targetId].value
+
+                // 再描画
+                ImageDraw()
+            }
+            // イベントセット
+            Object.keys(rangeInputElements).forEach(rangeInputElementKey=>rangeInputElements[rangeInputElementKey].addEventListener("change", rangeChangeEvent, false));
+
+            // stepで調整したらレンジに反映
+            function stepChangeEvent(e) {
+                var targetId = e.target.getAttribute('data-range-step');
+
+                // max値以上なら反映しない
+                if (Number(rangeInputElements[targetId].max) < Number(e.target.value)) {
+                    return false
+                }
+
+                // 反映
+                rangeInputElements[targetId].value = e.target.value
+
+                // 再描画
+                ImageDraw()
+            }
+            // イベントセット
+            var rangeStepInputs = document.querySelectorAll("[data-range-step]");
+            rangeStepInputs.forEach(rangeStepInput=>rangeStepInput.addEventListener("change", stepChangeEvent, false));
+
+            // ＋1ボタン
+            function rangeUpEvent(e) {
+                var targetId = e.target.getAttribute('data-range-up');
+                var rangeNumber = Number(rangeInputElements[targetId].value) + 1
+
+                // max値以上なら反映しない
+                if (Number(rangeInputElements[targetId].max) < rangeNumber) {
+                    return false
+                }
+
+                // 反映
+                rangeInputElements[targetId].value = rangeNumber
+                document.querySelector('[data-range-step="' + targetId + '"]').value = rangeNumber
+
+                // 再描画
+                ImageDraw()
+            }
+            // イベントセット
+            var rangeUpButtons = document.querySelectorAll('[data-range-up]');
+            rangeUpButtons.forEach(rangeUpButton=>rangeUpButton.addEventListener("click", rangeUpEvent, false));
+
+            // -1ボタン
+            function rangeDownEvent(e) {
+                var targetId = e.target.getAttribute('data-range-down');
+                var rangeNumber = Number(rangeInputElements[targetId].value) - 1;
+
+                // 0以下なら反映しない
+                if (rangeNumber === -1) {
+                    return false
+                }
+
+                // 反映
+                rangeInputElements[targetId].value = rangeNumber
+                document.querySelector('[data-range-step="' + targetId + '"]').value = rangeNumber
+
+                // 再描画
+                ImageDraw()
+            }
+            // イベントセット
+            var rangeDownButtons = document.querySelectorAll('[data-range-down]');
+            rangeDownButtons.forEach(rangeDownButton=>rangeDownButton.addEventListener("click", rangeDownEvent, false));
+
+            // ヘッダーの余白
+            var controlElement = document.getElementById('control');
+            resizeWindow();
+            function resizeWindow(){
+                outputElement.style.marginTop = Number(controlElement.clientHeight + 5) + "px";
+            }
+            window.addEventListener('orientationchange resize', resizeWindow);
+
+        </script>
+    </body>
+</html>
