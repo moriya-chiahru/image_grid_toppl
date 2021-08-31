@@ -51,6 +51,10 @@
                 max-width: 100%;
                 height: auto;
             }
+            #clipBorardImage {
+                background-color: gray;
+                color: #fff;
+            }
             #clipBorardImage > img {
                 display: none;
             }
@@ -111,9 +115,15 @@
                     </dd>
                 </div>
                 <div>
-                    <dt>分割数</dt>
+                    <dt>横分割数</dt>
                     <dd>
-                        <input type="number" id="splidNumber" value="2" min="1">
+                        <input type="number" id="widthSplidNumber" value="2" min="1">
+                    </dd>
+                </div>
+                <div>
+                    <dt>縦分割数</dt>
+                    <dd>
+                        <input type="number" id="heightSplidNumber" value="2" min="1">
                     </dd>
                 </div>
                 <div>
@@ -127,9 +137,9 @@
                     <dt>画像ファイル</dt>
                     <dd>
                         <input type="file" id="file" accept='image/*'>
-                        <!-- <span id="clipBorardImage" contenteditable="true">
-                            ペースト
-                        </span> -->
+                        <span id="clipBorardImage" contenteditable="true">
+                            ここを右クリックして貼り付け
+                        </span>
                     </dd>
                 </div>
             </dl>
@@ -151,7 +161,8 @@
             var gridHeight = 0;
             var gridWidthSplit = 0;
             var gridHeightSplit = 0;
-            var splidNumber = 2;
+            var widthSplidNumber = 2;
+            var heightSplidNumber = 2;
 
             //他描画情報
             var mainColor = "";
@@ -175,7 +186,8 @@
                 subColor: document.getElementById("subColor"),
                 mainBorder: document.getElementById("mainBorder"),
                 subBorder: document.getElementById("subBorder"),
-                splidNumber: document.getElementById("splidNumber"),
+                widthSplidNumber: document.getElementById("widthSplidNumber"),
+                heightSplidNumber: document.getElementById("heightSplidNumber"),
                 noneImage: document.getElementById("noneImage"),
             }
             const noneImageInputElement = document.getElementById("noneImage")
@@ -238,9 +250,10 @@
                 startX = Number(rangeInputElements.startX.value);
                 gridWidth = Number(rangeInputElements.width.value);
                 gridHeight = Number(rangeInputElements.height.value);
-                splidNumber = Number(optionInputElements.splidNumber.value) * 2;
-                gridWidthSplit = gridWidth / splidNumber;
-                gridHeightSplit = gridHeight / splidNumber;
+                widthSplidNumber = Number(optionInputElements.widthSplidNumber.value) * 2;
+                heightSplidNumber = Number(optionInputElements.heightSplidNumber.value) * 2;
+                gridWidthSplit = gridWidth / widthSplidNumber;
+                gridHeightSplit = gridHeight / heightSplidNumber;
                 mainColor = optionInputElements.mainColor.value;
                 subColor = optionInputElements.subColor.value;
                 mainBorder = optionInputElements.mainBorder.value;
@@ -256,7 +269,7 @@
                 context.strokeRect(startX, startY, gridWidth, gridHeight);
 
                 // 横分割 |
-                for (var i = 1; i < splidNumber; i++) {
+                for (var i = 1; i < widthSplidNumber; i++) {
                     if ((i % 2) == 0) {
                         context.lineWidth = mainBorder;
                         context.strokeStyle = mainColor;
@@ -269,7 +282,7 @@
                     gridDrawHeightLine(i);
                 }
                 // 縦分割　ー
-                for (var i = 1; i < splidNumber; i++) {
+                for (var i = 1; i < heightSplidNumber; i++) {
                     if ((i % 2) == 0) {
                         context.lineWidth = mainBorder;
                         context.strokeStyle = mainColor;
