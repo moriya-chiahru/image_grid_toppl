@@ -6,9 +6,6 @@
             body {
                 margin: 0;
             }
-            #canvas {
-                display: none;
-            }
             #control {
                 position: fixed;
                 top: 0;
@@ -33,23 +30,20 @@
                 color: #fff;
                 font-weight: bold;
             }
-
             #control >dl > div > dd {
                 margin-left: 0;
             }
-
             input[type="number"] {
                 width: 4em;
             }
 
-            #output {
+            #frame {
                 margin: 5px;
                 overflow: auto;
             }
-
-            #output img {
+            #canvas {
                 max-width: 100%;
-                height: auto;
+                max-height: 100%;
             }
             #clipBorardImage {
                 background-color: gray;
@@ -58,10 +52,32 @@
             #clipBorardImage > img {
                 display: none;
             }
+            #outputModal {
+                display: none;
+            }
+            #outputModal.open {
+                display: block;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba( 0, 0, 0, 1);
+                text-align: center;
+            }
+            #outputModal input {
+                margin-top: 10px;
+                padding: 10px 0;
+                width: 500px;
+            }
+            #output img {
+                width: 400px;
+                height: auto;
+                border: 2px solid red;
+            }
         </style>
     </head>
     <body>
-        <canvas id="canvas"></canvas>
         <div id="control">
             <dl>
                 <div>
@@ -134,6 +150,13 @@
                     </dd>
                 </div>
                 <div>
+                    <dt>書き出し</dt>
+                    <dd>
+                        <input type="button" id="outputButton" value="書き出し">
+                    </dd>
+                </div>
+
+                <div>
                     <dt>画像ファイル</dt>
                     <dd>
                         <input type="file" id="file" accept='image/*'>
@@ -144,13 +167,19 @@
                 </div>
             </dl>
         </div>
-        <div id="output"></div>
+        <div id="frame">
+            <canvas id="canvas"></canvas>
+        </div>
+        <div id="outputModal">
+            <input type="button" value="閉じる" id="outputModalClose"/>
+            <div id="output"></div>
+        </div>
+        
 
         <!-- 出力機能 -->
         <script>
             var canvas = document.getElementById("canvas");
             var context = canvas.getContext('2d');
-            var outputElement = document.getElementById('output');
 
             // サイズ
             var width = 0;
@@ -335,9 +364,6 @@
                     }
                     // グリッドの描画
                     gridDraw()
-                    //画像タグに代入して表示
-                    var dataurl = canvas.toDataURL();
-                    outputElement.innerHTML = "<img src='" + dataurl + "'>";
                 }
             }
 
@@ -442,11 +468,31 @@
             var rangeDownButtons = document.querySelectorAll('[data-range-down]');
             rangeDownButtons.forEach(rangeDownButton=>rangeDownButton.addEventListener("click", rangeDownEvent, false));
 
+
+            // 画像書き出し
+            var outputElement = document.getElementById('output');
+            var outputModalElement = document.getElementById('outputModal');
+            function outputEvent(e) {
+                outputModalElement.classList.add("open")
+                //画像タグに代入して表示
+                var dataurl = canvas.toDataURL();
+                outputElement.innerHTML = "<img src='" + dataurl + "'>";
+            }
+            // イベントセット
+            var outputButtonElement = document.getElementById('outputButton');
+            outputButtonElement.addEventListener("click", outputEvent, false);
+            // 閉じる
+            function outputCloseEvent(e) {
+                outputModalElement.classList.remove("open")
+            }
+            var outputModalCloseElement = document.getElementById('outputModalClose');
+            outputModalCloseElement.addEventListener("click", outputCloseEvent, false);
+
             // ヘッダーの余白
             var controlElement = document.getElementById('control');
             resizeWindow();
             function resizeWindow(){
-                outputElement.style.marginTop = Number(controlElement.clientHeight + 5) + "px";
+                document.getElementById('frame').style.marginTop = Number(controlElement.clientHeight + 5) + "px";
             }
             window.addEventListener('orientationchange resize', resizeWindow);
 
