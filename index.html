@@ -117,17 +117,24 @@
                     </dd>
                 </div>
                 <div>
+                    <dt>枠線</dt>
+                    <dd>
+                        <input type="color" id="frameColor" value="#0000ff">
+                        <input type="number" id="frameBorder" value="2" min="0">
+                    </dd>
+                </div>
+                <div>
                     <dt>主線</dt>
                     <dd>
                         <input type="color" id="mainColor" value="#0000ff">
-                        <input type="number" id="mainBorder" value="2" min="1">
+                        <input type="number" id="mainBorder" value="2" min="0">
                     </dd>
                 </div>
                 <div>
                     <dt>準線</dt>
                     <dd>
                         <input type="color" id="subColor" value="#8585ff">
-                        <input type="number" id="subBorder" value="2" min="1">
+                        <input type="number" id="subBorder" value="2" min="0">
                     </dd>
                 </div>
                 <div>
@@ -194,8 +201,10 @@
             var heightSplidNumber = 2;
 
             //他描画情報
+            var frameColor = "";
             var mainColor = "";
             var subColor = "";
+            var frameBorder = 2;
             var mainBorder = 2;
             var subBorder = 2;
             var noneImage = true;
@@ -211,8 +220,10 @@
                 startX: document.getElementById("startX"),
             }
             const optionInputElements = {
+                frameColor: document.getElementById("frameColor"),
                 mainColor: document.getElementById("mainColor"),
                 subColor: document.getElementById("subColor"),
+                frameBorder: document.getElementById("frameBorder"),
                 mainBorder: document.getElementById("mainBorder"),
                 subBorder: document.getElementById("subBorder"),
                 widthSplidNumber: document.getElementById("widthSplidNumber"),
@@ -283,8 +294,10 @@
                 heightSplidNumber = Number(optionInputElements.heightSplidNumber.value) * 2;
                 gridWidthSplit = gridWidth / widthSplidNumber;
                 gridHeightSplit = gridHeight / heightSplidNumber;
+                frameColor = optionInputElements.frameColor.value;
                 mainColor = optionInputElements.mainColor.value;
                 subColor = optionInputElements.subColor.value;
+                frameBorder = optionInputElements.frameBorder.value;
                 mainBorder = optionInputElements.mainBorder.value;
                 subBorder = optionInputElements.subBorder.value;
             }
@@ -293,8 +306,9 @@
             function gridDraw() {
                 getGridInputsSize()
                 //枠線
-                context.lineWidth = mainBorder;
-                context.strokeStyle = mainColor;
+                context.lineWidth = frameBorder;
+                context.strokeStyle = frameColor;
+                context.globalAlpha = frameBorder === "0"? 0 : 1.0;
                 context.strokeRect(startX, startY, gridWidth, gridHeight);
 
                 // 横分割 |
@@ -302,10 +316,12 @@
                     if ((i % 2) == 0) {
                         context.lineWidth = mainBorder;
                         context.strokeStyle = mainColor;
+                        context.globalAlpha = mainBorder === "0"? 0 : 1.0;
                         context.setLineDash([]);
                     } else {
                         context.lineWidth = subBorder;
                         context.strokeStyle = subColor;
+                        context.globalAlpha = subBorder === "0"? 0 : 1.0;
                         context.setLineDash([2, 2]);
                     }
                     gridDrawHeightLine(i);
@@ -315,10 +331,12 @@
                     if ((i % 2) == 0) {
                         context.lineWidth = mainBorder;
                         context.strokeStyle = mainColor;
+                        context.globalAlpha = mainBorder === "0"? 0 : 1.0;
                         context.setLineDash([]);
                     } else {
                         context.lineWidth = subBorder;
                         context.strokeStyle = subColor;
+                        context.globalAlpha = subBorder === "0"? 0 : 1.0;
                         context.setLineDash([2, 2]);
                     }
                     gridDrawWidthLine(i);
@@ -492,7 +510,7 @@
             var controlElement = document.getElementById('control');
             resizeWindow();
             function resizeWindow(){
-                document.getElementById('frame').style.marginTop = Number(controlElement.clientHeight + 5) + "px";
+                document.getElementById('frame').style.marginTop = Number(controlElement.clientHeight + 20) + "px";
             }
             window.addEventListener('orientationchange resize', resizeWindow);
 
