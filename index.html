@@ -514,6 +514,8 @@
             }
             window.addEventListener('orientationchange resize', resizeWindow);
 
+            //ダブルタップで拡大禁止
+            document.addEventListener("dblclick", function(e){ e.preventDefault();}, { passive: false });
         </script>
     </body>
 </html>
